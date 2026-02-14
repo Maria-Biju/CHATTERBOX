@@ -1,49 +1,307 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Login</title>
+  <title>Login | ChatterBox</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .auth-body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at top left, #1d4ed8 0%, #0f172a 40%, #020617 100%);
+      color: #e5e7eb;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* soft animated blobs in background */
+    .auth-bg-blob {
+      position: absolute;
+      width: 260px;
+      height: 260px;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.7;
+      animation: blob-move 18s ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+
+    .auth-bg-blob.one {
+      background: #2563eb;
+      top: -40px;
+      left: -60px;
+    }
+
+    .auth-bg-blob.two {
+      background: #a855f7;
+      bottom: -60px;
+      right: -40px;
+      animation-delay: 4s;
+    }
+
+    @keyframes blob-move {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, -30px) scale(1.1); }
+    }
+
+    .auth-shell {
+      position: relative;
+      width: 100%;
+      max-width: 900px;
+      padding: 24px;
+      box-sizing: border-box;
+      display: flex;
+      gap: 32px;
+      z-index: 1;
+    }
+
+    .auth-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      color: #e5e7eb;
+    }
+
+    .auth-logo {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      margin-bottom: 10px;
+    }
+
+    .auth-tagline {
+      font-size: 14px;
+      color: #9ca3af;
+      max-width: 260px;
+    }
+
+    /* glass card */
+    .auth-card {
+      flex: 1;
+      border-radius: 18px;
+      padding: 26px 24px 22px;
+      background: rgba(15,23,42,0.45);
+      border: 1px solid rgba(148,163,184,0.5);
+      box-shadow:
+        0 18px 45px rgba(0,0,0,0.55),
+        0 0 0 1px rgba(15,23,42,0.4);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-sizing: border-box;
+      transform: translateY(6px);
+      opacity: 0;
+      animation: card-in 0.5s ease-out forwards;
+    }
+
+    @keyframes card-in {
+      0% {
+        opacity: 0;
+        transform: translateY(16px) scale(0.98);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .auth-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: #f9fafb;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      color: #cbd5f5;
+      margin-bottom: 18px;
+    }
+
+    .auth-input-group {
+      margin-bottom: 12px;
+      text-align: left;
+    }
+
+    .auth-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #e5e7eb;
+      margin-bottom: 4px;
+      display: block;
+    }
+
+    .auth-input {
+      width: 100%;
+      padding: 10px 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(148,163,184,0.6);
+      font-size: 14px;
+      box-sizing: border-box;
+      background: rgba(15,23,42,0.85);
+      color: #e5e7eb;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.05s, background 0.15s;
+    }
+
+    .auth-input::placeholder {
+      color: #9ca3af;
+    }
+
+    .auth-input:focus {
+      outline: none;
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 1px rgba(96,165,250,0.4);
+      transform: translateY(-0.5px);
+      background: rgba(15,23,42,0.95);
+    }
+
+    .auth-button {
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      box-shadow: 0 12px 30px rgba(37,99,235,0.45);
+      transition: background 0.15s, transform 0.05s, box-shadow 0.15s;
+    }
+
+    .auth-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 16px 38px rgba(37,99,235,0.6);
+    }
+
+    .auth-button:active {
+      transform: translateY(0);
+      box-shadow: 0 10px 24px rgba(37,99,235,0.45);
+    }
+
+    .auth-footer {
+      font-size: 13px;
+      text-align: center;
+      margin-top: 14px;
+      color: #e5e7eb;
+    }
+
+    .auth-footer a {
+      color: #93c5fd;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    #msg {
+      margin-top: 8px;
+      font-size: 13px;
+      text-align: center;
+      min-height: 18px;
+      color: #fecaca;
+      font-weight: 500;
+    }
+
+    @media (max-width: 800px) {
+      .auth-shell {
+        flex-direction: column;
+        max-width: 420px;
+      }
+      .auth-left {
+        display: none;
+      }
+    }
+  </style>
 </head>
-<body>
+<body class="auth-body">
 
-<div class="card">
-  <h2>ChatterBox 💬</h2>
+<div class="auth-bg-blob one"></div>
+<div class="auth-bg-blob two"></div>
 
-  <input id="username" placeholder="Username">
-  <input id="password" type="password" placeholder="Password">
+<div class="auth-shell">
+  <div class="auth-left">
+    <div class="auth-logo">ChatterBox 💬</div>
+    <div class="auth-tagline">
+      Real‑time WebSocket chat with authentication, history and admin dashboard.
+    </div>
+  </div>
 
-  <button onclick="login()">Login</button>
+  <div class="auth-card">
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-subtitle">Sign in to continue the conversation.</div>
 
-  <p id="msg"></p>
+    <div class="auth-input-group">
+      <label class="auth-label" for="username">Username</label>
+      <input id="username" class="auth-input" placeholder="Enter your username">
+    </div>
 
-  <p>
-    Not registered?
-    <a href="/ui/register.html">Create account</a>
-  </p>
+    <div class="auth-input-group">
+      <label class="auth-label" for="password">Password</label>
+      <input id="password" class="auth-input" type="password" placeholder="••••••••">
+    </div>
+
+    <button class="auth-button" onclick="login()">
+      <span>Login</span>
+      <span>➜</span>
+    </button>
+
+    <div id="msg"></div>
+
+    <div class="auth-footer">
+      New to ChatterBox?
+      <a href="/ui/register.html">Create an account</a>
+    </div>
+  </div>
 </div>
 
 <script>
 async function login() {
-  const username = document.getElementById("username").value;
-  const password = document.getElementById("password").value;
+  const username = document.getElementById("username").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const msgEl = document.getElementById("msg");
+  msgEl.innerText = "";
+  msgEl.style.color = "#fecaca";
 
-  const res = await fetch("http://127.0.0.1:8000/login", {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({username, password})
-  });
+  if (!username || !password) {
+    msgEl.innerText = "Please enter username and password.";
+    return;
+  }
 
-  const data = await res.json();
+  try {
+    const res = await fetch("http://127.0.0.1:8000/login", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({username, password})
+    });
 
-  if(res.ok){
-    localStorage.setItem("username", data.username);
-    localStorage.setItem("token", data.token);
-    window.location.href = "/ui/chat.html";
-  } else {
-    document.getElementById("msg").innerText = data.detail;
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem("username", data.username);
+      localStorage.setItem("token", data.token);
+      msgEl.style.color = "#bbf7d0";
+      msgEl.innerText = "Login successful. Redirecting...";
+      setTimeout(() => {
+        window.location.href = "/ui/chat.html";
+      }, 500);
+    } else {
+      msgEl.innerText = data.detail || "Login failed";
+    }
+  } catch (err) {
+    msgEl.innerText = "Unable to connect to server.";
   }
 }
 </script>
-
 </body>
 </html>
