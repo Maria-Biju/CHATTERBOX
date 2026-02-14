@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chat</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* override root body for chat page only */
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+    }
+
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      background: #ece5dd;
+    }
+
+    .chat-header {
+      padding: 10px 16px;
+      background: #075e54;
+      color: white;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .chat-header-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 16px;
+    }
+
+    .chat-header-online {
+      font-size: 12px;
+      margin-top: 4px;
+      color: #d0e9e7;
+    }
+    .msg-text {
+    margin-top: 2px;
+    margin-bottom: 2px;
+    }
+
+
+    #chatBox {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      border-top: 1px solid #ccc;
+      border-bottom: 1px solid #ccc;
+      background: #e5ddd5;
+    }
+
+    .input-area {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      gap: 8px;
+      background: #f0f0f0;
+    }
+
+    #message {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+      font-size: 14px;
+    }
+
+    #sendBtn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: #128c7e;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    #sendBtn:hover {
+      background: #0c6f63;
+    }
+
+    #error {
+      color: red;
+      font-size: 12px;
+      padding: 4px 10px;
+      min-height: 18px;
+    }
+
+    .msg {
+      max-width: 70%;
+      padding: 8px 12px;
+      margin: 6px 0;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    .me {
+      background: #dcf8c6;
+      margin-left: auto;
+    }
+
+    .other {
+      background: #ffffff;
+      margin-right: auto;
+    }
+
+    .user {
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .time {
+      font-size: 10px;
+      text-align: right;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">
+    <div class="chat-header-title">
+      <span>ChatterBox 💬</span>
+    </div>
+    <div id="onlineUsers" class="chat-header-online">
+      Online: ...
+    </div>
+  </div>
+
+  <div id="chatBox"></div>
+
+  <div id="error"></div>
+
+  <div class="input-area">
+    <input id="message" placeholder="Type a message" />
+    <button id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+</div>
+
+<script>
+const username = localStorage.getItem("username");
+const token = localStorage.getItem("token");
+
+if (!username || !token) {
+  window.location.href = "/ui/login.html";
+}
+
+const ws = new WebSocket("ws://127.0.0.1:8000/ws?token=" + token);
+
+// store messages in DOM by id
+function renderMessage(data) {
+  const chatBox = document.getElementById("chatBox");
+  const existing = document.querySelector(`[data-msg-id="${data.id}"]`);
+  const isSelf = data.user === username;
+  const tick = isSelf ? (data.seen ? "✅" : "✔️") : "";
+  const msgClass = isSelf ? "msg me" : "msg other";
+
+  const innerHtml = `
+    <div class="user">
+      ${data.user}
+      ${isSelf ? `<span style="float:right; font-size:12px;">
+        <span style="cursor:pointer; margin-right:6px;" onclick="editMessage(${data.id}, '${encodeURIComponent(data.text)}')">✏️</span>
+        <span style="cursor:pointer;" onclick="deleteMessage(${data.id})">🗑️</span>
+      </span>` : ""}
+    </div>
+    <div class="msg-text">${data.text}</div>
+    <div class="time">${data.time} ${tick}</div>
+  `;
+
+  if (existing) {
+    existing.innerHTML = innerHtml;
+  } else {
+    const div = document.createElement("div");
+    div.className = msgClass;
+    div.dataset.msgId = data.id;
+    div.innerHTML = innerHtml;
+    chatBox.appendChild(div);
+  }
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+ws.onmessage = function(event) {
+  const data = JSON.parse(event.data);
+  const errorP = document.getElementById("error");
+
+  if (data.type === "message") {
+    errorP.innerText = "";
+    renderMessage(data);
+
+  } else if (data.type === "error") {
+    errorP.innerText = data.message;
+
+  } else if (data.type === "users") {
+    const onlineDiv = document.getElementById("onlineUsers");
+    const users = data.users || [];
+    const formatted = users.map(u => u === username ? `${u} (you)` : u);
+    onlineDiv.innerText = users.length
+      ? `Online (${users.length}): ${formatted.join(", ")}`
+      : "Online: none";
+
+  } else if (data.type === "delete") {
+    const el = document.querySelector(`[data-msg-id="${data.id}"]`);
+    if (el && el.parentNode) {
+      el.parentNode.removeChild(el);
+    }
+
+  } else if (data.type === "edit") {
+    // find and update only text part
+    const el = document.querySelector(`[data-msg-id="${data.id}"]`);
+    if (el) {
+      const textDiv = el.querySelector(".msg-text");
+      if (textDiv) {
+        textDiv.textContent = data.text;
+      }
+    }
+  }
+};
+
+function sendMessage() {
+  const input = document.getElementById("message");
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  ws.send(JSON.stringify({
+    type: "send",
+    text: msg
+  }));
+
+  input.value = "";
+}
+
+// delete message (self only)
+function deleteMessage(id) {
+  ws.send(JSON.stringify({
+    type: "delete",
+    id: id
+  }));
+}
+
+// edit message (self only)
+function editMessage(id, encodedOldText) {
+  const oldText = decodeURIComponent(encodedOldText);
+  const newText = prompt("Edit your message:", oldText);
+  if (newText === null) return; // cancelled
+  const trimmed = newText.trim();
+  if (!trimmed) return;
+
+  ws.send(JSON.stringify({
+    type: "edit",
+    id: id,
+    text: trimmed
+  }));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #f3f3f3;
+    }
+
+    .admin-container {
+      display: flex;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .sidebar {
+      width: 260px;
+      background: #075e54;
+      color: white;
+      padding: 20px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sidebar h2 {
+      margin: 0 0 10px 0;
+      font-size: 20px;
+    }
+
+    .sidebar h3 {
+      margin: 16px 0 8px 0;
+      font-size: 16px;
+    }
+
+    #onlineList {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+      font-size: 14px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    #onlineList li {
+      margin-bottom: 6px;
+    }
+
+    .main {
+      flex: 1;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+      background: #ffffff;
+    }
+
+    .main-header {
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .main-header h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    #adminError {
+      color: red;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 8px 10px;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f5f5f5;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<div class="admin-container">
+  <div class="sidebar">
+    <h2>ChatterBox Admin</h2>
+    <h3>Online Users</h3>
+    <ul id="onlineList">
+      <li>Loading...</li>
+    </ul>
+  </div>
+
+  <div class="main">
+    <div class="main-header">
+      <h2>Registered Users</h2>
+    </div>
+    <div id="adminError"></div>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:60px;">ID</th>
+          <th style="width:200px;">Username</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody id="usersTableBody">
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+const username = localStorage.getItem("username");
+
+if (!token || !username) {
+  window.location.href = "/ui/login.html";
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch("http://127.0.0.1:8000/users");
+    const data = await res.json();
+    const tbody = document.getElementById("usersTableBody");
+    tbody.innerHTML = "";
+
+    data.forEach(user => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${user.id}</td>
+        <td>${user.username}</td>
+        <td>${user.email}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch (err) {
+    document.getElementById("adminError").innerText =
+      "Failed to load users";
+  }
+}
+
+const ws = new WebSocket("ws://127.0.0.1:8000/ws?token=" + token);
+
+ws.onmessage = function(event) {
+  const data = JSON.parse(event.data);
+  if (data.type === "users") {
+    const ul = document.getElementById("onlineList");
+    ul.innerHTML = "";
+    const users = data.users || [];
+    if (!users.length) {
+      ul.innerHTML = "<li>None</li>";
+      return;
+    }
+    users.forEach(u => {
+      const li = document.createElement("li");
+      li.textContent = u === username ? `${u} (you)` : u;
+      ul.appendChild(li);
+    });
+  }
+};
+
+loadUsers();
+</script>
+</body>
+</html>

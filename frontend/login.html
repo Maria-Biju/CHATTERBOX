@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="card">
+  <h2>ChatterBox 💬</h2>
+
+  <input id="username" placeholder="Username">
+  <input id="password" type="password" placeholder="Password">
+
+  <button onclick="login()">Login</button>
+
+  <p id="msg"></p>
+
+  <p>
+    Not registered?
+    <a href="/ui/register.html">Create account</a>
+  </p>
+</div>
+
+<script>
+async function login() {
+  const username = document.getElementById("username").value;
+  const password = document.getElementById("password").value;
+
+  const res = await fetch("http://127.0.0.1:8000/login", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({username, password})
+  });
+
+  const data = await res.json();
+
+  if(res.ok){
+    localStorage.setItem("username", data.username);
+    localStorage.setItem("token", data.token);
+    window.location.href = "/ui/chat.html";
+  } else {
+    document.getElementById("msg").innerText = data.detail;
+  }
+}
+</script>
+
+</body>
+</html>
