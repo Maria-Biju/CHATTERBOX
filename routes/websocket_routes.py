@@ -6,7 +6,7 @@ from routes.user_routes import sessions
 router = APIRouter()
 online_users = set()
 
-# Simple toxicity list; extend as needed
+# Simple toxicity list;
 TOXIC_WORDS = {
     "fuck", "shit", "bitch", "noob",
     "idiot", "stupid", "dumb"
